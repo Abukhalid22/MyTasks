@@ -1,21 +1,24 @@
-import { React, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
 import AxiosInstance from "./Axios";
 import { useNavigate, useParams } from "react-router-dom";
 
 const Delete = () => {
-  const MyParam = useParams();
-  const MyId = MyParam.id;
-
-  const [myData, setMydata] = useState();
+  const { id: MyId } = useParams();
+  const [myData, setMydata] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const GetData = () => {
-    AxiosInstance.get(`project/${MyId}`).then((res) => {
+  const GetData = async () => {
+    try {
+      const res = await AxiosInstance.get(`project/${MyId}`);
       setMydata(res.data);
-      console.log(res.data);
       setLoading(false);
-    });
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError("Failed to load data");
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -24,16 +27,21 @@ const Delete = () => {
 
   const navigate = useNavigate();
 
-  const submission = (data) => {
-    AxiosInstance.delete(`project/${MyId}/`).then((res) => {
+  const submission = async () => {
+    try {
+      await AxiosInstance.delete(`project/${MyId}/`);
       navigate(`/`);
-    });
+    } catch (error) {
+      console.error("Error deleting project:", error);
+    }
   };
 
   return (
     <div>
       {loading ? (
         <p>Loading data...</p>
+      ) : error ? (
+        <p>{error}</p>
       ) : (
         <div>
           <Box
@@ -66,7 +74,7 @@ const Delete = () => {
                 marginBottom: "40px",
               }}
             >
-              Are you sure that you want to delete this project: {myData.name}
+              Are you sure that you want to delete this project: {myData.name}?
             </Box>
 
             <Box sx={{ width: "30%" }}>

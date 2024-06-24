@@ -1,4 +1,4 @@
-import { React, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
 import MyDatePickerField from "./forms/MyDatePickerField";
 import MyTextField from "./forms/MyTextField";
@@ -13,9 +13,10 @@ import * as yup from "yup";
 import MyMultiSelectField from "./forms/MyMultiSelectField";
 
 const Create = () => {
-  const [projectmanager, setProjectmanager] = useState();
-  const [employees, setEmployees] = useState();
+  const [projectmanager, setProjectmanager] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const hardcoded_options = [
     { id: "", name: "None" },
@@ -24,17 +25,31 @@ const Create = () => {
     { id: "Completed", name: "Completed" },
   ];
 
-  const GetData = () => {
-    AxiosInstance.get(`projectmanager/`).then((res) => {
-      setProjectmanager(res.data);
-      console.log(res.data);
-    });
-
-    AxiosInstance.get(`employees/`).then((res) => {
-      setEmployees(res.data);
-      console.log(res.data);
+  // Function to fetch data from the API
+  const GetData = async () => {
+    try {
+      const [projectManagerRes, employeesRes] = await Promise.all([
+        AxiosInstance.get(`projectmanager/`),
+        AxiosInstance.get(`employees/`),
+      ]);
+      setProjectmanager(
+        projectManagerRes.data.map((pm) => ({
+          ...pm,
+          id: String(pm.id), // Ensure IDs are strings
+        }))
+      );
+      setEmployees(
+        employeesRes.data.map((emp) => ({
+          ...emp,
+          id: String(emp.id), // Ensure IDs are strings
+        }))
+      );
       setLoading(false);
-    });
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError("Failed to load data");
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -42,12 +57,8 @@ const Create = () => {
   }, []);
 
   const navigate = useNavigate();
-  const defaultValues = {
-    name: "",
-    comments: "",
-    status: "",
-  };
 
+  // Define validation schema using yup
   const schema = yup.object({
     name: yup.string().required("Name is a required field"),
     projectmanager: yup
@@ -64,37 +75,52 @@ const Create = () => {
       .required("End date is a required field")
       .min(
         yup.ref("start_date"),
-        "The end date can not be before the start date"
+        "The end date cannot be before the start date"
       ),
   });
 
+  // Initialize form with default values and validation schema
   const { handleSubmit, control } = useForm({
-    defaultValues: defaultValues,
+    defaultValues: {
+      name: "",
+      projectmanager: "",
+      status: "",
+      employees: [],
+      comments: "",
+      start_date: null,
+      end_date: null,
+    },
     resolver: yupResolver(schema),
   });
 
-  const submission = (data) => {
-    const StartDate = Dayjs(data.start_date["$d"]).format("YYYY-MM-DD");
-    const EndDate = Dayjs(data.end_date["$d"]).format("YYYY-MM-DD");
+  // Handle form submission
+  const submission = async (data) => {
+    const StartDate = Dayjs(data.start_date).format("YYYY-MM-DD");
+    const EndDate = Dayjs(data.end_date).format("YYYY-MM-DD");
 
-    AxiosInstance.post(`project/`, {
-      name: data.name,
-      projectmanager: data.projectmanager,
-      employees: data.employees,
-      status: data.status,
-      comments: data.comments,
-      start_date: StartDate,
-      end_date: EndDate,
-    })
-    .then((res) => {
+    try {
+      await AxiosInstance.post(`project/`, {
+        name: data.name,
+        projectmanager: data.projectmanager,
+        employees: data.employees,
+        status: data.status,
+        comments: data.comments,
+        start_date: StartDate,
+        end_date: EndDate,
+      });
       navigate(`/`);
-    });
+    } catch (error) {
+      console.error("Error creating project:", error);
+      setError("Failed to create project");
+    }
   };
 
   return (
     <div>
       {loading ? (
         <p>Loading data...</p>
+      ) : error ? (
+        <p>{error}</p>
       ) : (
         <form onSubmit={handleSubmit(submission)}>
           <Box
@@ -104,10 +130,12 @@ const Create = () => {
               width: "100%",
               backgroundColor: "#00003f",
               marginBottom: "10px",
+              alignItems: "center",
+              padding: "10px",
             }}
           >
             <Typography sx={{ marginLeft: "20px", color: "#fff" }}>
-              Create records
+              Create New Task
             </Typography>
           </Box>
 
@@ -129,24 +157,22 @@ const Create = () => {
             >
               <MyTextField
                 label="Name"
-                name={"name"}
+                name="name"
                 control={control}
                 placeholder="Provide a project name"
-                width={"30%"}
+                width="30%"
               />
-
               <MyDatePickerField
                 label="Start date"
                 name="start_date"
                 control={control}
-                width={"30%"}
+                width="30%"
               />
-
               <MyDatePickerField
                 label="End date"
                 name="end_date"
                 control={control}
-                width={"30%"}
+                width="30%"
               />
             </Box>
 
@@ -156,22 +182,20 @@ const Create = () => {
                 name="comments"
                 control={control}
                 placeholder="Provide project comments"
-                width={"30%"}
+                width="30%"
               />
-
               <MySelectField
                 label="Status"
                 name="status"
                 control={control}
-                width={"30%"}
+                width="30%"
                 options={hardcoded_options}
               />
-
               <MySelectField
                 label="Project manager"
                 name="projectmanager"
                 control={control}
-                width={"30%"}
+                width="30%"
                 options={projectmanager}
               />
             </Box>
@@ -187,7 +211,7 @@ const Create = () => {
                 label="Employees"
                 name="employees"
                 control={control}
-                width={"30%"}
+                width="30%"
                 options={employees}
               />
             </Box>
@@ -195,11 +219,11 @@ const Create = () => {
             <Box
               sx={{
                 display: "flex",
-                justifyContent: "start",
+                justifyContent: "right",
                 marginTop: "40px",
               }}
             >
-              <Button variant="contained" type="submit" sx={{ width: "30%" }}>
+              <Button variant="contained" type="submit" sx={{ width: "20%" }}>
                 Submit
               </Button>
             </Box>

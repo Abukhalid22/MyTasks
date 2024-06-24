@@ -1,20 +1,17 @@
-import * as React from "react";
+import PropTypes from "prop-types";
 import TextField from "@mui/material/TextField";
 import { Controller } from "react-hook-form";
 
 export default function MyTextField(props) {
   const { label, width, placeholder, name, control } = props;
+
   return (
     <Controller
       name={name}
       control={control}
-      render={({
-        field: { onChange, value },
-        fieldState: { error },
-        formState,
-      }) => (
+      render={({ field: { onChange, value }, fieldState: { error } }) => (
         <TextField
-          sx={{ width: { width } }}
+          sx={{ width: width }}
           onChange={onChange}
           value={value}
           id="standard-basic"
@@ -28,3 +25,11 @@ export default function MyTextField(props) {
     />
   );
 }
+
+MyTextField.propTypes = {
+  label: PropTypes.string.isRequired,
+  width: PropTypes.string.isRequired,
+  placeholder: PropTypes.string,
+  name: PropTypes.string.isRequired,
+  control: PropTypes.object.isRequired,
+};

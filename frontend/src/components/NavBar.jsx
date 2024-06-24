@@ -1,4 +1,5 @@
 import * as React from "react";
+import PropTypes from "prop-types";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import AppBar from "@mui/material/AppBar";
@@ -38,7 +39,7 @@ export default function Navbar(props) {
               <ListItemIcon>
                 <HomeIcon />
               </ListItemIcon>
-              <ListItemText primary={"Home"} />
+              <ListItemText primary={"Dashboard"} />
             </ListItemButton>
           </ListItem>
 
@@ -64,7 +65,7 @@ export default function Navbar(props) {
               <ListItemIcon>
                 <BorderColorIcon />
               </ListItemIcon>
-              <ListItemText primary={"Create"} />
+              <ListItemText primary={"Create Task"} />
             </ListItemButton>
           </ListItem>
         </List>
@@ -81,7 +82,7 @@ export default function Navbar(props) {
       >
         <Toolbar>
           <IconButton
-            color="inheret"
+            color="inherit"
             onClick={changeOpenStatus}
             sx={{ mr: 2, display: { sm: "none" } }}
           >
@@ -89,7 +90,7 @@ export default function Navbar(props) {
           </IconButton>
 
           <Typography variant="h6" noWrap component="div">
-            Our application
+            MyTasks.com
           </Typography>
         </Toolbar>
       </AppBar>
@@ -128,9 +129,13 @@ export default function Navbar(props) {
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />
-
         {content}
       </Box>
     </Box>
   );
 }
+
+Navbar.propTypes = {
+  drawerWidth: PropTypes.number.isRequired,
+  content: PropTypes.node.isRequired,
+};

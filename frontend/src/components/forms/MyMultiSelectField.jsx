@@ -1,4 +1,5 @@
 import * as React from "react";
+import PropTypes from "prop-types";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import OutlinedInput from "@mui/material/OutlinedInput";
@@ -7,6 +8,7 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 import Chip from "@mui/material/Chip";
+import FormHelperText from "@mui/material/FormHelperText";
 import { Controller } from "react-hook-form";
 
 const ITEM_HEIGHT = 48;
@@ -49,15 +51,10 @@ export default function MyMultiSelectField(props) {
       name={name}
       control={control}
       defaultValue={[]}
-      render={({
-        field: { onChange, value },
-        fieldState: { error },
-        formState,
-      }) => (
-        <FormControl sx={{ width: { width } }}>
+      render={({ field: { onChange, value = [] }, fieldState: { error } }) => (
+        <FormControl sx={{ width: width }} error={!!error}>
           <InputLabel id="demo-multiple-chip-label">{label}</InputLabel>
           <Select
-            sx={{ width: "100%" }}
             labelId="demo-multiple-chip-label"
             id="demo-multiple-chip"
             multiple
@@ -72,7 +69,10 @@ export default function MyMultiSelectField(props) {
                 {selected.map((value) => (
                   <Chip
                     key={value}
-                    label={options.find((option) => option.id === value)?.name}
+                    label={
+                      options.find((option) => String(option.id) === value)
+                        ?.name
+                    }
                   />
                 ))}
               </Box>
@@ -81,16 +81,30 @@ export default function MyMultiSelectField(props) {
           >
             {options.map((option) => (
               <MenuItem
-                key={option.id}
-                value={option.id}
+                key={String(option.id)}
+                value={String(option.id)}
                 style={getStyles(option.name, personName, theme)}
               >
                 {option.name}
               </MenuItem>
             ))}
           </Select>
+          {error && <FormHelperText>{error.message}</FormHelperText>}
         </FormControl>
       )}
     />
   );
 }
+
+MyMultiSelectField.propTypes = {
+  control: PropTypes.object.isRequired,
+  name: PropTypes.string.isRequired,
+  label: PropTypes.string.isRequired,
+  width: PropTypes.string.isRequired,
+  options: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      name: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+};

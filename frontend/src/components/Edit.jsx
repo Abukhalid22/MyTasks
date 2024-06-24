@@ -1,4 +1,4 @@
-import { React, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
 import MyDatePickerField from "./forms/MyDatePickerField";
 import MyTextField from "./forms/MyTextField";
@@ -8,15 +8,16 @@ import { useForm } from "react-hook-form";
 import AxiosInstance from "./Axios";
 import Dayjs from "dayjs";
 import { useNavigate, useParams } from "react-router-dom";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import MyMultiSelectField from "./forms/MyMultiSelectField";
 
 const Edit = () => {
-  const MyParam = useParams();
-  const MyId = MyParam.id;
-
-  const [projectmanager, setProjectmanager] = useState();
-  const [employees, setEmployees] = useState();
+  const { id: MyId } = useParams();
+  const [projectmanager, setProjectmanager] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const hardcoded_options = [
     { id: "", name: "None" },
@@ -25,28 +26,35 @@ const Edit = () => {
     { id: "Completed", name: "Completed" },
   ];
 
-  const GetData = () => {
-    AxiosInstance.get(`projectmanager/`).then((res) => {
-      setProjectmanager(res.data);
-      console.log(res.data);
-    });
-
-    AxiosInstance.get(`employees/`).then((res) => {
-      setEmployees(res.data);
-      console.log(res.data);
-    });
-
-    AxiosInstance.get(`project/${MyId}`).then((res) => {
-      console.log(res.data);
-      setValue("name", res.data.name);
-      setValue("status", res.data.status);
-      setValue("employees", res.data.employees);
-      setValue("projectmanager", res.data.projectmanager);
-      setValue("comments", res.data.comments);
-      setValue("start_date", Dayjs(res.data.start_date));
-      setValue("end_date", Dayjs(res.data.end_date));
+  const GetData = async () => {
+    try {
+      const [projectManagerRes, employeesRes, projectRes] = await Promise.all([
+        AxiosInstance.get(`projectmanager/`),
+        AxiosInstance.get(`employees/`),
+        AxiosInstance.get(`project/${MyId}`),
+      ]);
+      setProjectmanager(
+        projectManagerRes.data.map((pm) => ({ ...pm, id: String(pm.id) }))
+      );
+      setEmployees(
+        employeesRes.data.map((emp) => ({ ...emp, id: String(emp.id) }))
+      );
+      setValue("name", projectRes.data.name);
+      setValue("status", projectRes.data.status);
+      setValue(
+        "employees",
+        projectRes.data.employees.map((emp) => String(emp))
+      );
+      setValue("projectmanager", String(projectRes.data.projectmanager));
+      setValue("comments", projectRes.data.comments);
+      setValue("start_date", Dayjs(projectRes.data.start_date));
+      setValue("end_date", Dayjs(projectRes.data.end_date));
       setLoading(false);
-    });
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError("Failed to load data");
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -54,37 +62,68 @@ const Edit = () => {
   }, []);
 
   const navigate = useNavigate();
-  const defaultValues = {
-    name: "",
-    comments: "",
-    status: "",
-  };
 
-  const { handleSubmit, setValue, control } = useForm({
-    defaultValues: defaultValues,
+  // Define validation schema using yup
+  const schema = yup.object({
+    name: yup.string().required("Name is a required field"),
+    projectmanager: yup
+      .string()
+      .required("Project manager is a required field"),
+    status: yup.string().required("Status is a required field"),
+    employees: yup
+      .array()
+      .min(1, "Pick at least one option from the select field"),
+    comments: yup.string(),
+    start_date: yup.date().required("Start date is a required field"),
+    end_date: yup
+      .date()
+      .required("End date is a required field")
+      .min(
+        yup.ref("start_date"),
+        "The end date cannot be before the start date"
+      ),
   });
-  const submission = (data) => {
-    const StartDate = Dayjs(data.start_date["$d"]).format("YYYY-MM-DD");
-    const EndDate = Dayjs(data.end_date["$d"]).format("YYYY-MM-DD");
 
-    AxiosInstance.put(`project/${MyId}/`, {
-      name: data.name,
-      projectmanager: data.projectmanager,
-      employees: data.employees,
-      status: data.status,
-      comments: data.comments,
-      start_date: StartDate,
-      end_date: EndDate,
-    })
-    .then((res) => {
+  // Initialize form with default values and validation schema
+  const { handleSubmit, setValue, control } = useForm({
+    defaultValues: {
+      name: "",
+      projectmanager: "",
+      status: "",
+      employees: [],
+      comments: "",
+      start_date: null,
+      end_date: null,
+    },
+    resolver: yupResolver(schema),
+  });
+
+  const submission = async (data) => {
+    const StartDate = Dayjs(data.start_date).format("YYYY-MM-DD");
+    const EndDate = Dayjs(data.end_date).format("YYYY-MM-DD");
+
+    try {
+      await AxiosInstance.put(`project/${MyId}/`, {
+        name: data.name,
+        projectmanager: data.projectmanager,
+        employees: data.employees,
+        status: data.status,
+        comments: data.comments,
+        start_date: StartDate,
+        end_date: EndDate,
+      });
       navigate(`/`);
-    });
+    } catch (error) {
+      console.error("Error updating project:", error);
+    }
   };
 
   return (
     <div>
       {loading ? (
         <p>Loading data...</p>
+      ) : error ? (
+        <p>{error}</p>
       ) : (
         <form onSubmit={handleSubmit(submission)}>
           <Box
@@ -97,7 +136,7 @@ const Edit = () => {
             }}
           >
             <Typography sx={{ marginLeft: "20px", color: "#fff" }}>
-              Create records
+              Edit project
             </Typography>
           </Box>
 
@@ -119,24 +158,22 @@ const Edit = () => {
             >
               <MyTextField
                 label="Name"
-                name={"name"}
+                name="name"
                 control={control}
                 placeholder="Provide a project name"
-                width={"30%"}
+                width="30%"
               />
-
               <MyDatePickerField
                 label="Start date"
                 name="start_date"
                 control={control}
-                width={"30%"}
+                width="30%"
               />
-
               <MyDatePickerField
                 label="End date"
                 name="end_date"
                 control={control}
-                width={"30%"}
+                width="30%"
               />
             </Box>
 
@@ -146,22 +183,20 @@ const Edit = () => {
                 name="comments"
                 control={control}
                 placeholder="Provide project comments"
-                width={"30%"}
+                width="30%"
               />
-
               <MySelectField
                 label="Status"
                 name="status"
                 control={control}
-                width={"30%"}
+                width="30%"
                 options={hardcoded_options}
               />
-
               <MySelectField
                 label="Project manager"
                 name="projectmanager"
                 control={control}
-                width={"30%"}
+                width="30%"
                 options={projectmanager}
               />
             </Box>
@@ -177,7 +212,7 @@ const Edit = () => {
                 label="Employees"
                 name="employees"
                 control={control}
-                width={"30%"}
+                width="30%"
                 options={employees}
               />
             </Box>
