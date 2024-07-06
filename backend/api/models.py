@@ -1,4 +1,25 @@
+from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import AbstractUser
+
+# from django.core.mail import EmailMultiAlternatives
 from django.db import models
+
+# from django.dispatch import receiver
+# from django.template.loader import render_to_string
+# from django.urls import reverse
+# from django.utils.html import strip_tags
+# from django_rest_passwordreset.signals import reset_password_token_created
+
+
+class CustomUser(AbstractUser):
+    email = models.EmailField(max_length=200, unique=True)
+    birthday = models.DateField(null=True, blank=True)
+    # username = models.CharField(max_length=200, null=True, blank=True)
+
+    # objects = CustomUserManager()
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
 
 
 class ProjectManager(models.Model):
