@@ -1,0 +1,22 @@
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Operating System specific files
+.DS_Store
+Thumbs.db
+
+# Python artifacts
+**/*.pyc
+**/*.pyo
+**/__pycache__/
+*.egg-info/
+dist/
+build/
+
+# Logs and databases
+*.log
+.db
+.db-journal
+

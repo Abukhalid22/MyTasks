@@ -1,0 +1,20 @@
+[
+  {
+    "model": "api.projectmanager",
+    "pk": 1,
+    "fields": {
+      "name": "John Doe",
+      "created": "2024-07-10T00:00:00Z",
+      "modified": "2024-07-10T00:00:00Z"
+    }
+  },
+  {
+    "model": "api.employees",
+    "pk": 1,
+    "fields": {
+      "name": "Jane Smith",
+      "created": "2024-07-10T00:00:00Z",
+      "modified": "2024-07-10T00:00:00Z"
+    }
+  }
+]

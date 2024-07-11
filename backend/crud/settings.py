@@ -7,10 +7,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Initialize environment variables
 env = environ.Env()
-env.read_env(BASE_DIR / ".env")  # reading .env file
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+# Update the path to read .env file from the root directory
+env.read_env(env_file=BASE_DIR.parent / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -24,7 +22,6 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -48,10 +45,17 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+# Allow all CORS origins for development
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Alternatively, if you need more granular control, you can specify allowed origins:
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "http://127.0.0.1:3000",
+#     "http://host.docker.internal:3000",  # For Docker on Windows/macOS
+#     "http://backend:8000",  # The backend service name in Docker
+#     "http://nginx",  # If you access through Nginx service in Docker
+# ]
 
 AUTH_USER_MODEL = "api.CustomUser"
 
@@ -63,8 +67,6 @@ CORS_ALLOW_HEADERS = (
     "x-csrftoken",
     "x-requested-with",
 )
-
-# CORS_ALLOW_ALL_ORIGINS: True
 
 ROOT_URLCONF = "crud.urls"
 
